@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    container_name: phone-prompt-generator
+    ports:
+      - "3040:3000"
+    environment:
+      - NODE_ENV=production
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATABASE_URL=file:/app/data/prompts.db
+      - NEXT_PUBLIC_APP_URL=http://localhost:3040
+      - AUDIO_STORAGE_PATH=/app/public/audio
+    volumes:
+      - ./data:/app/data
+      - ./audio:/app/public/audio
+    restart: unless-stopped
