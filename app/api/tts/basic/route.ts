@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { openai } from '@/lib/openai'
 import { prisma } from '@/lib/db'
 import { convertTo3CXFormat } from '@/lib/audio-converter'
+import { getOrCreateSessionFolder, getSessionFilePath } from '@/lib/session'
 import fs from 'fs/promises'
 import path from 'path'
 
@@ -28,20 +29,19 @@ export async function POST(request: NextRequest) {
     // Convert to buffer
     const buffer = Buffer.from(await mp3.arrayBuffer())
 
+    // Get or create session folder
+    const session = await getOrCreateSessionFolder()
+    
     // Generate unique filename for temporary MP3
     const timestamp = Date.now()
     const tempMp3FileName = `temp_${timestamp}.mp3`
-    const audioDir = path.join(process.cwd(), 'public', 'audio')
+    const tempMp3Path = getSessionFilePath(session.id, tempMp3FileName)
     
-    // Ensure directory exists
-    await fs.mkdir(audioDir, { recursive: true })
-    
-    const tempMp3Path = path.join(audioDir, tempMp3FileName)
     await fs.writeFile(tempMp3Path, buffer)
 
     // Convert MP3 to 3CX WAV format
     const finalWavFileName = fileName ? fileName.replace('.mp3', '.wav') : `prompt_${timestamp}.wav`
-    const wavUrl = await convertTo3CXFormat(tempMp3Path, finalWavFileName)
+    const wavUrl = await convertTo3CXFormat(tempMp3Path, finalWavFileName, session.id)
 
     // Clean up temporary MP3 file
     await fs.unlink(tempMp3Path)

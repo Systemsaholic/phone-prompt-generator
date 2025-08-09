@@ -109,14 +109,27 @@ export async function convertAudio(
 
 export async function convertTo3CXFormat(
   inputPath: string,
-  outputFileName: string
+  outputFileName: string,
+  sessionId?: string
 ): Promise<string> {
-  const outputDir = path.join(process.cwd(), 'public', 'audio')
+  let outputDir: string
+  let publicUrl: string
+  
+  if (sessionId) {
+    // Use session-specific folder
+    outputDir = path.join(process.cwd(), 'public', 'audio', 'sessions', sessionId)
+    publicUrl = `/audio/sessions/${sessionId}/${outputFileName}`
+  } else {
+    // Fallback to old behavior for backward compatibility
+    outputDir = path.join(process.cwd(), 'public', 'audio')
+    publicUrl = `/audio/${outputFileName}`
+  }
+  
   await fs.mkdir(outputDir, { recursive: true })
   
   const outputPath = path.join(outputDir, outputFileName)
   
   await convertAudio(inputPath, outputPath, PHONE_FORMATS['3cx'])
   
-  return `/audio/${outputFileName}`
+  return publicUrl
 }

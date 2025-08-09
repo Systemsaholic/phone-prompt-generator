@@ -41,7 +41,9 @@ next-env.d.ts
 /data/
 
 # Audio files
-/public/audio/
+/public/audio/*.wav
+/public/audio/*.mp3
+/public/audio/sessions/
 /audio/
 
 # IDE

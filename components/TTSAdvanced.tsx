@@ -1,14 +1,15 @@
 "use client"
 
-import React, { useState } from 'react'
+import React, { useState, useRef } from 'react'
 import { Button } from './ui/button'
-import { Download, Loader2, Volume2, Sparkles } from 'lucide-react'
+import { Download, Loader2, Volume2, Sparkles, AlertCircle } from 'lucide-react'
+import VoicePreview from './VoicePreview'
+import AITextGenerator from './AITextGenerator'
+import AudioVersionCard, { AudioVersion } from './AudioVersionCard'
+import { getVoiceOptions } from '@/lib/voices'
 import toast from 'react-hot-toast'
 
-const VOICES = [
-  'alloy', 'ash', 'ballad', 'coral', 'echo', 
-  'fable', 'nova', 'onyx', 'sage', 'shimmer'
-]
+const VOICE_OPTIONS = getVoiceOptions()
 
 const PRESET_INSTRUCTIONS = {
   'British Accent': 'Speak with a clear British accent',
@@ -37,12 +38,87 @@ export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
   const [fileName, setFileName] = useState('')
   const [loading, setLoading] = useState(false)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  const [versions, setVersions] = useState<AudioVersion[]>([])
+  const [playingVersionId, setPlayingVersionId] = useState<string | null>(null)
+  const lastTextHashRef = useRef<string>('')
+  const lastSettingsHashRef = useRef<string>('')
 
   React.useEffect(() => {
     if (templateText) {
       setText(templateText)
     }
   }, [templateText])
+
+  const getTextHash = (content: string) => {
+    let hash = 0
+    for (let i = 0; i < content.length; i++) {
+      const char = content.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash
+    }
+    return Math.abs(hash).toString(16)
+  }
+
+  const getSettingsHash = (v: string, instr: string) => {
+    const combined = `${v}-${instr}`
+    let hash = 0
+    for (let i = 0; i < combined.length; i++) {
+      const char = combined.charCodeAt(i)
+      hash = ((hash << 5) - hash) + char
+      hash = hash & hash
+    }
+    return Math.abs(hash).toString(16)
+  }
+
+  const calculateVersion = (instructions: string) => {
+    const currentTextHash = getTextHash(text)
+    const currentSettingsHash = getSettingsHash(voice, instructions)
+    
+    if (versions.length === 0) {
+      lastTextHashRef.current = currentTextHash
+      lastSettingsHashRef.current = currentSettingsHash
+      return '1'
+    }
+    
+    const lastVersion = versions[versions.length - 1]
+    const lastVersionParts = lastVersion.version.split('.')
+    const majorVersion = parseInt(lastVersionParts[0])
+    const minorVersion = lastVersionParts[1] ? parseInt(lastVersionParts[1]) : 0
+    
+    if (currentTextHash !== lastTextHashRef.current) {
+      lastTextHashRef.current = currentTextHash
+      lastSettingsHashRef.current = currentSettingsHash
+      return `${majorVersion + 1}`
+    } else if (currentSettingsHash !== lastSettingsHashRef.current) {
+      lastSettingsHashRef.current = currentSettingsHash
+      return `${majorVersion}.${minorVersion + 1}`
+    }
+    
+    return `${majorVersion}.${minorVersion + 1}`
+  }
+
+  const generateAIFilename = async (versionNum: string) => {
+    try {
+      const response = await fetch('/api/ai-text', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          operation: 'generateFilename',
+          input: text.substring(0, 500),
+          version: versionNum
+        })
+      })
+      
+      const data = await response.json()
+      if (data.success && data.filename) {
+        return data.filename
+      }
+    } catch (error) {
+      console.error('Failed to generate AI filename:', error)
+    }
+    
+    return `phone_prompt_advanced_v${versionNum}.wav`
+  }
 
   const togglePreset = (preset: string) => {
     setSelectedPresets((prev) =>
@@ -68,8 +144,16 @@ export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
       return
     }
 
+    if (versions.length >= 10) {
+      toast.error('Maximum 10 versions allowed. Please delete some versions to continue.')
+      return
+    }
+
     setLoading(true)
     try {
+      const versionNum = calculateVersion(instructions)
+      const aiFileName = await generateAIFilename(versionNum)
+      
       const response = await fetch('/api/tts/advanced', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -77,15 +161,31 @@ export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
           text,
           voice,
           instructions,
-          fileName: fileName || undefined,
+          fileName: aiFileName,
         }),
       })
 
       const data = await response.json()
       
       if (data.success) {
+        const newVersion: AudioVersion = {
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          version: versionNum,
+          text,
+          textHash: getTextHash(text),
+          voice,
+          speed: data.generation?.speed || 1.0,
+          instructions,
+          fileName: aiFileName,
+          audioUrl: data.audioUrl,
+          timestamp: new Date(),
+          isSaved: false,
+          mode: 'advanced'
+        }
+        
+        setVersions([...versions, newVersion])
         setAudioUrl(data.audioUrl)
-        toast.success('Advanced audio generated successfully!')
+        toast.success(`Advanced audio v${versionNum} generated successfully!`)
       } else {
         toast.error(data.error || 'Failed to generate audio')
       }
@@ -97,13 +197,58 @@ export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
     }
   }
 
-  const handleDownload = () => {
-    if (audioUrl) {
-      const link = document.createElement('a')
-      link.href = audioUrl
-      link.download = fileName || 'phone_prompt_advanced.mp3'
-      link.click()
+  const handlePlayVersion = (versionId: string) => {
+    const audio = document.getElementById(`audio-${versionId}`) as HTMLAudioElement
+    
+    if (playingVersionId === versionId && audio && !audio.paused) {
+      audio.pause()
+      setPlayingVersionId(null)
+    } else {
+      // Pause any currently playing audio
+      if (playingVersionId) {
+        const currentAudio = document.getElementById(`audio-${playingVersionId}`) as HTMLAudioElement
+        if (currentAudio) currentAudio.pause()
+      }
+      
+      if (audio) {
+        audio.play()
+        setPlayingVersionId(versionId)
+        
+        audio.onended = () => {
+          setPlayingVersionId(null)
+        }
+      }
     }
+  }
+
+  const handleSaveVersion = async (version: AudioVersion) => {
+    try {
+      const response = await fetch('/api/audio/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(version)
+      })
+      
+      if (response.ok) {
+        setVersions(versions.map(v => 
+          v.id === version.id ? { ...v, isSaved: true } : v
+        ))
+        toast.success('Version saved to history!')
+      } else {
+        toast.error('Failed to save version')
+      }
+    } catch (error) {
+      toast.error('Error saving version')
+      console.error(error)
+    }
+  }
+
+  const handleDeleteVersion = (id: string) => {
+    setVersions(versions.filter(v => v.id !== id))
+    if (playingVersionId === id) {
+      setPlayingVersionId(null)
+    }
+    toast.success('Version deleted')
   }
 
   return (
@@ -120,14 +265,20 @@ export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium mb-2">
-          Text to Convert (Max 4096 characters)
-        </label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-medium">
+            Text to Convert (Max 4096 characters)
+          </label>
+          <AITextGenerator 
+            onTextGenerated={setText}
+            currentText={text}
+          />
+        </div>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           className="w-full p-3 border rounded-lg h-32 resize-none"
-          placeholder="Enter your phone system prompt text here..."
+          placeholder="Enter your phone system prompt text here or use AI to generate one..."
           maxLength={4096}
         />
         <div className="text-sm text-gray-500 mt-1">
@@ -137,17 +288,20 @@ export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
 
       <div>
         <label className="block text-sm font-medium mb-2">Base Voice</label>
-        <select
-          value={voice}
-          onChange={(e) => setVoice(e.target.value)}
-          className="w-full p-2 border rounded-lg"
-        >
-          {VOICES.map((v) => (
-            <option key={v} value={v}>
-              {v.charAt(0).toUpperCase() + v.slice(1)}
-            </option>
-          ))}
-        </select>
+        <div className="space-y-2">
+          <select
+            value={voice}
+            onChange={(e) => setVoice(e.target.value)}
+            className="w-full p-2 border rounded-lg"
+          >
+            {VOICE_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value} title={option.description}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <VoicePreview voice={voice} />
+        </div>
       </div>
 
       <div>
@@ -216,25 +370,28 @@ export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
         </Button>
       </div>
 
-      {audioUrl && (
-        <div className="p-4 bg-gray-50 rounded-lg space-y-4">
-          <h3 className="font-medium">Generated Audio</h3>
-          <audio controls className="w-full">
-            <source src={audioUrl} type="audio/mpeg" />
-            Your browser does not support the audio element.
-          </audio>
-          <div className="flex gap-2">
-            <Button onClick={handleDownload} variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Download
-            </Button>
-            <Button 
-              onClick={() => window.open(audioUrl, '_blank')} 
-              variant="outline"
-            >
-              <Volume2 className="mr-2 h-4 w-4" />
-              Open in New Tab
-            </Button>
+      {versions.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-medium">Generated Versions</h3>
+            {versions.length >= 10 && (
+              <div className="flex items-center gap-2 text-sm text-orange-600">
+                <AlertCircle className="h-4 w-4" />
+                Maximum versions reached
+              </div>
+            )}
+          </div>
+          <div className="grid gap-3">
+            {versions.map(version => (
+              <AudioVersionCard
+                key={version.id}
+                version={version}
+                onPlay={() => handlePlayVersion(version.id)}
+                onSave={handleSaveVersion}
+                onDelete={handleDeleteVersion}
+                isPlaying={playingVersionId === version.id}
+              />
+            ))}
           </div>
         </div>
       )}

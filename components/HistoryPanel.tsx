@@ -5,6 +5,7 @@ import { Button } from './ui/button'
 import { Download, Trash2, Volume2, RefreshCw } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
+import ConfirmDialog from './ui/ConfirmDialog'
 
 interface Generation {
   id: string
@@ -24,6 +25,10 @@ export default function HistoryPanel() {
   const [generations, setGenerations] = useState<Generation[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean
+    generation: Generation | null
+  }>({ isOpen: false, generation: null })
 
   useEffect(() => {
     fetchHistory()
@@ -44,14 +49,18 @@ export default function HistoryPanel() {
     }
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this generation?')) return
+  const handleDeleteClick = (generation: Generation) => {
+    setDeleteConfirm({ isOpen: true, generation })
+  }
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm.generation) return
 
     try {
       const response = await fetch('/api/history', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id }),
+        body: JSON.stringify({ id: deleteConfirm.generation.id }),
       })
 
       if (response.ok) {
@@ -64,6 +73,10 @@ export default function HistoryPanel() {
       toast.error('Error deleting generation')
       console.error(error)
     }
+  }
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirm({ isOpen: false, generation: null })
   }
 
   const handleDownload = (generation: Generation) => {
@@ -149,7 +162,7 @@ export default function HistoryPanel() {
                   <Download className="h-4 w-4" />
                 </Button>
                 <Button
-                  onClick={() => handleDelete(generation.id)}
+                  onClick={() => handleDeleteClick(generation)}
                   variant="outline"
                   size="icon"
                   title="Delete"
@@ -161,6 +174,17 @@ export default function HistoryPanel() {
           </div>
         ))}
       </div>
+
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Generation"
+        message={`Are you sure you want to delete "${deleteConfirm.generation?.fileName}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   )
 }
