@@ -26,11 +26,26 @@ const PRESET_INSTRUCTIONS = {
   'Child-Friendly': 'Speak in a way that children would understand and enjoy',
 }
 
-interface TTSAdvancedProps {
-  templateText?: string
+interface HistoryGeneration {
+  id: string
+  text: string
+  mode: string
+  voice: string
+  speed?: number
+  instructions?: string
+  format: string
+  fileName: string
+  fileUrl: string
+  templateUsed?: string
+  createdAt: string
 }
 
-export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
+interface TTSAdvancedProps {
+  templateText?: string
+  historyGeneration?: HistoryGeneration | null
+}
+
+export default function TTSAdvanced({ templateText = '', historyGeneration }: TTSAdvancedProps) {
   const [text, setText] = useState(templateText)
   const [voice, setVoice] = useState('alloy')
   const [customInstructions, setCustomInstructions] = useState('')
@@ -48,6 +63,43 @@ export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
       setText(templateText)
     }
   }, [templateText])
+
+  React.useEffect(() => {
+    if (historyGeneration && historyGeneration.mode === 'advanced') {
+      setText(historyGeneration.text)
+      setVoice(historyGeneration.voice)
+      
+      // Parse instructions to extract presets and custom instructions
+      if (historyGeneration.instructions) {
+        const instructions = historyGeneration.instructions
+        const foundPresets: string[] = []
+        
+        // Check for preset instructions in the text
+        Object.entries(PRESET_INSTRUCTIONS).forEach(([preset, instruction]) => {
+          if (instructions.toLowerCase().includes(instruction.toLowerCase()) ||
+              instructions.toLowerCase().includes(preset.toLowerCase())) {
+            foundPresets.push(preset)
+          }
+        })
+        
+        setSelectedPresets(foundPresets)
+        
+        // Set custom instructions (removing matched preset instructions)
+        let customPart = instructions
+        foundPresets.forEach(preset => {
+          const presetInstruction = PRESET_INSTRUCTIONS[preset as keyof typeof PRESET_INSTRUCTIONS]
+          if (presetInstruction) {
+            customPart = customPart.replace(presetInstruction, '').trim()
+          }
+        })
+        setCustomInstructions(customPart)
+      }
+      
+      // Optionally set the filename
+      const baseFileName = historyGeneration.fileName.replace(/(_v\d+)?\.wav$/, '')
+      setFileName(`${baseFileName}_edited.wav`)
+    }
+  }, [historyGeneration])
 
   const getTextHash = (content: string) => {
     let hash = 0
@@ -264,26 +316,28 @@ export default function TTSAdvanced({ templateText = '' }: TTSAdvancedProps) {
         </p>
       </div>
 
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-sm font-medium">
-            Text to Convert (Max 4096 characters)
+      <div className="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
+        <div className="flex items-center justify-between mb-3">
+          <label className="text-lg font-semibold text-gray-800">
+            Phone System Script
           </label>
-          <AITextGenerator 
-            onTextGenerated={setText}
-            currentText={text}
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">
+              {text.length} / 4096 characters
+            </span>
+            <AITextGenerator 
+              onTextGenerated={setText}
+              currentText={text}
+            />
+          </div>
         </div>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="w-full p-3 border rounded-lg h-32 resize-none"
+          className="w-full p-5 border-2 border-gray-300 rounded-lg h-80 resize-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all text-lg leading-relaxed bg-white"
           placeholder="Enter your phone system prompt text here or use AI to generate one..."
           maxLength={4096}
         />
-        <div className="text-sm text-gray-500 mt-1">
-          {text.length} / 4096 characters
-        </div>
       </div>
 
       <div>

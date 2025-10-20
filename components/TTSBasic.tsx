@@ -11,12 +11,27 @@ import toast from 'react-hot-toast'
 
 const VOICE_OPTIONS = getVoiceOptions()
 
+interface HistoryGeneration {
+  id: string
+  text: string
+  mode: string
+  voice: string
+  speed?: number
+  instructions?: string
+  format: string
+  fileName: string
+  fileUrl: string
+  templateUsed?: string
+  createdAt: string
+}
+
 interface TTSBasicProps {
   onTemplateSelect?: (text: string) => void
   templateText?: string
+  historyGeneration?: HistoryGeneration | null
 }
 
-export default function TTSBasic({ templateText = '' }: TTSBasicProps) {
+export default function TTSBasic({ templateText = '', historyGeneration }: TTSBasicProps) {
   const [text, setText] = useState(templateText)
   const [voice, setVoice] = useState('alloy')
   const [speed, setSpeed] = useState(1.0)
@@ -34,6 +49,17 @@ export default function TTSBasic({ templateText = '' }: TTSBasicProps) {
       setText(templateText)
     }
   }, [templateText])
+
+  React.useEffect(() => {
+    if (historyGeneration && historyGeneration.mode === 'basic') {
+      setText(historyGeneration.text)
+      setVoice(historyGeneration.voice)
+      setSpeed(historyGeneration.speed || 1.0)
+      // Optionally set the filename
+      const baseFileName = historyGeneration.fileName.replace(/(_v\d+)?\.wav$/, '')
+      setFileName(`${baseFileName}_edited.wav`)
+    }
+  }, [historyGeneration])
 
   const getTextHash = (content: string) => {
     let hash = 0
@@ -220,36 +246,40 @@ export default function TTSBasic({ templateText = '' }: TTSBasicProps) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <div className="flex items-center justify-between mb-2">
-          <label className="block text-sm font-medium">
-            Text to Convert (Max 4096 characters)
+      <div className="bg-gray-50 p-6 rounded-lg border-2 border-gray-200">
+        <div className="flex items-center justify-between mb-3">
+          <label className="text-lg font-semibold text-gray-800">
+            Phone System Script
           </label>
-          <AITextGenerator 
-            onTextGenerated={setText}
-            currentText={text}
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">
+              {text.length} / 4096 characters
+            </span>
+            <AITextGenerator 
+              onTextGenerated={setText}
+              currentText={text}
+            />
+          </div>
         </div>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="w-full p-3 border rounded-lg h-32 resize-none"
+          className="w-full p-5 border-2 border-gray-300 rounded-lg h-80 resize-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all text-lg leading-relaxed bg-white"
           placeholder="Enter your phone system prompt text here or use AI to generate one..."
           maxLength={4096}
         />
-        <div className="text-sm text-gray-500 mt-1">
-          {text.length} / 4096 characters
-        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium mb-2">Voice</label>
+          <label htmlFor="voice-select" className="block text-sm font-medium mb-2">Voice</label>
           <div className="space-y-2">
             <select
+              id="voice-select"
               value={voice}
               onChange={(e) => setVoice(e.target.value)}
               className="w-full p-2 border rounded-lg"
+              aria-label="Select a voice"
             >
               {VOICE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value} title={option.description}>

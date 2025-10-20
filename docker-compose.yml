@@ -2,7 +2,12 @@ version: '3.8'
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        - OPENAI_API_KEY=${OPENAI_API_KEY}
+        - DATABASE_URL=file:/app/data/prompts.db
+        - NEXT_PUBLIC_APP_URL=http://localhost:3040
     container_name: phone-prompt-generator
     ports:
       - "3040:3000"
@@ -12,7 +17,17 @@ services:
       - DATABASE_URL=file:/app/data/prompts.db
       - NEXT_PUBLIC_APP_URL=http://localhost:3040
       - AUDIO_STORAGE_PATH=/app/public/audio
+      # Authentication
+      - AUTH_USERNAME=${AUTH_USERNAME:-admin}
+      - AUTH_PASSWORD=${AUTH_PASSWORD}
+      - SESSION_SECRET=${SESSION_SECRET}
     volumes:
       - ./data:/app/data
       - ./audio:/app/public/audio
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s

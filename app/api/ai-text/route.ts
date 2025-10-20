@@ -17,35 +17,46 @@ export async function POST(request: NextRequest) {
     let userPrompt = ''
 
     if (operation === 'generate') {
-      systemPrompt = `You are a professional copywriter specializing in phone system prompts. Create clear, professional, and engaging phone prompts that are optimized for 3CX and other business phone systems.
+      systemPrompt = `You are creating phone system prompts that sound like real business phone systems. Write in a simple, conversational style that people are used to hearing when they call businesses.
 
 Guidelines:
-- Keep language clear and professional
-- Use appropriate pacing with natural pauses
-- Include specific instructions when relevant (press 1, press 2, etc.)
-- Make prompts friendly but concise
-- Ensure compatibility with phone audio quality
+- Use simple, everyday language - avoid fancy words
+- Sound natural and conversational, not formal or eloquent
+- Write like typical phone systems: "Thanks for calling" not "Thank you for contacting"
+- Be direct and to the point
+- Use common phone system phrases like "please hold", "press 1", "leave a message"
+- Avoid flowery language or sophisticated vocabulary
+- Should sound like a real person speaking naturally
 - Length should be appropriate for phone systems (typically 30-120 seconds when spoken)
-- Focus on user experience and clear communication
+
+Examples of good style:
+- "Thanks for calling. Please hold while we connect you."
+- "Hi, you've reached our office. We're closed right now."
+- "Press 1 for sales, 2 for support"
 
 Return only the phone prompt text, no additional commentary.`
 
-      userPrompt = `Create a professional phone prompt for: ${input}`
+      userPrompt = `Create a natural-sounding phone prompt for: ${input}`
     } else if (operation === 'polish') {
-      systemPrompt = `You are a professional copywriter specializing in phone system prompts. Improve and polish the provided text to make it more professional, clear, and suitable for business phone systems.
+      systemPrompt = `You are editing phone system prompts to sound more like typical business phone systems. Make the text sound natural and conversational, like real phone systems people call every day.
 
 Guidelines:
-- Maintain the original intent and key information
-- Improve clarity and professionalism
-- Ensure natural flow and pacing for spoken audio
-- Fix grammar and enhance word choice
-- Make it sound more engaging while keeping it professional
-- Ensure compatibility with phone system requirements
-- Keep the same general length unless improvement requires changes
+- Simplify fancy or eloquent language to everyday words
+- Make it sound conversational, not formal
+- Use common phone system phrases
+- Remove unnecessary sophistication
+- Keep the same information but make it sound more natural
+- Fix any grammar issues but keep it conversational
+- Should sound like a real person talking, not reading a script
+
+Examples of changes:
+- "We appreciate your patience" → "Thanks for waiting"
+- "A representative will assist you momentarily" → "Someone will be with you shortly"
+- "Please remain on the line" → "Please hold"
 
 Return only the improved phone prompt text, no additional commentary.`
 
-      userPrompt = `Polish this phone prompt text:\n\n${input}`
+      userPrompt = `Make this phone prompt sound more natural and conversational:\n\n${input}`
     } else if (operation === 'generateFilename') {
       systemPrompt = `You are a helpful assistant that creates descriptive, professional filenames for phone system audio files.
 

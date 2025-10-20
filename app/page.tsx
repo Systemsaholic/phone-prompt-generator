@@ -1,21 +1,66 @@
 "use client"
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import TTSBasic from '@/components/TTSBasic'
 import TTSAdvanced from '@/components/TTSAdvanced'
 import TemplateManager from '@/components/TemplateManager'
 import HistoryPanel from '@/components/HistoryPanel'
-import { Phone, Sparkles, FileText, History, Settings } from 'lucide-react'
+import { Phone, Sparkles, FileText, History, Settings, LogOut } from 'lucide-react'
+
+interface HistoryGeneration {
+  id: string
+  text: string
+  mode: string
+  voice: string
+  speed?: number
+  instructions?: string
+  format: string
+  fileName: string
+  fileUrl: string
+  templateUsed?: string
+  createdAt: string
+}
 
 export default function Home() {
+  const router = useRouter()
   const [templateText, setTemplateText] = useState('')
   const [activeTab, setActiveTab] = useState('generate')
   const [ttsMode, setTtsMode] = useState('basic')
+  const [historyGeneration, setHistoryGeneration] = useState<HistoryGeneration | null>(null)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const handleTemplateSelect = (text: string) => {
     setTemplateText(text)
     setActiveTab('generate')
+  }
+
+  const handleHistorySelect = (generation: HistoryGeneration) => {
+    setHistoryGeneration(generation)
+    setTtsMode(generation.mode === 'advanced' ? 'advanced' : 'basic')
+    setActiveTab('generate')
+  }
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        router.push('/login')
+        router.refresh()
+      } else {
+        console.error('Logout failed')
+      }
+    } catch (error) {
+      console.error('Logout error:', error)
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   return (
@@ -29,8 +74,19 @@ export default function Home() {
                 Phone Prompt Generator
               </h1>
             </div>
-            <div className="text-sm text-gray-500">
-              Professional Audio for Phone Systems
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-500 hidden sm:block">
+                Professional Audio for Phone Systems
+              </div>
+              <button
+                onClick={handleLogout}
+                disabled={isLoggingOut}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -93,9 +149,15 @@ export default function Home() {
               </div>
 
               {ttsMode === 'basic' ? (
-                <TTSBasic templateText={templateText} />
+                <TTSBasic 
+                  templateText={templateText} 
+                  historyGeneration={historyGeneration}
+                />
               ) : (
-                <TTSAdvanced templateText={templateText} />
+                <TTSAdvanced 
+                  templateText={templateText}
+                  historyGeneration={historyGeneration}
+                />
               )}
             </div>
 
@@ -123,7 +185,7 @@ export default function Home() {
 
           <TabsContent value="history">
             <div className="bg-white rounded-lg shadow p-6">
-              <HistoryPanel />
+              <HistoryPanel onGenerationSelect={handleHistorySelect} />
             </div>
           </TabsContent>
         </Tabs>

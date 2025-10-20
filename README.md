@@ -1,16 +1,32 @@
 # Phone Prompt Generator
 
-A professional web application for generating high-quality audio prompts for phone systems using OpenAI's Text-to-Speech API. Perfect for creating IVR messages, voicemail greetings, hold music announcements, and more.
+A Next.js 14 application for generating professional phone system audio prompts using OpenAI's TTS and GPT-4 APIs with built-in authentication, session management, and 3CX-optimized audio conversion.
+
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Next.js](https://img.shields.io/badge/Next.js-14.2-black)
+![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Features
 
 ### 🎯 Dual TTS Modes
-- **Basic Mode**: Simple voice and speed controls using OpenAI's standard TTS API
-- **Advanced Mode**: Natural language instructions for accent, tone, emotion, and style using GPT-4o
+- **Basic Mode**: Direct TTS generation with voice and speed controls
+- **Advanced Mode**: AI-enhanced voice control with natural language instructions
+
+### 🔒 Security & Authentication
+- **Secure Authentication**: Cookie-based sessions with rate limiting (5 attempts/15 min lockout)
+- **Cryptographic Sessions**: HMAC-signed tokens with crypto.randomBytes
+- **Password Security**: Bcrypt hashing support with timing-safe comparison
+- **Environment Validation**: Production-ready configuration checks
+- **Session Management**: Automatic cleanup after 24 hours
 
 ### 🎤 Voice Options
-All 10 OpenAI voices available:
-- Alloy, Ash, Ballad, Coral, Echo, Fable, Nova, Onyx, Sage, Shimmer
+6 OpenAI TTS voices available:
+- **alloy** - Neutral and balanced
+- **echo** - Warm and expressive
+- **fable** - Engaging and friendly
+- **onyx** - Deep and authoritative
+- **nova** - Clear and professional (recommended)
+- **shimmer** - Upbeat and energetic
 
 ### 📝 Template System
 Pre-built templates with variable replacement:
@@ -21,19 +37,22 @@ Pre-built templates with variable replacement:
 - Holiday Greetings
 - Custom Templates
 
-### 🔊 Audio Format Support
-- **3CX Phone System**: WAV, Mono, 8kHz, 16-bit (optimized preset)
-- **Standard VoIP**: WAV, Mono, 16kHz, 16-bit
-- **High Quality**: MP3, Stereo, 48kHz
-- **Web Streaming**: MP3, Mono, 24kHz
-- **Custom Formats**: User-defined settings
+### 🔊 3CX Audio Optimization
+Automatic conversion to 3CX-compatible format:
+- **Format**: WAV (not MP3)
+- **Channels**: Mono (not stereo)
+- **Sample Rate**: 8 kHz (VoIP optimized)
+- **Bit Depth**: 16-bit PCM
 
 ### 📊 Additional Features
-- Generation history tracking
-- Custom filename support
-- Audio preview and download
-- SQLite database for persistence
-- Docker deployment ready
+- 🤖 AI text generation and polishing with GPT-4
+- 📂 Session-based audio storage (prevents user conflicts)
+- 📊 Generation history tracking
+- 🎵 Audio preview and download
+- 🗄️ SQLite database for persistence
+- 🐳 Docker deployment ready with health checks
+- ⚡ Production-ready error handling
+- 📝 Comprehensive input validation
 
 ## Quick Start
 
@@ -55,13 +74,27 @@ cd phone-prompt-generator
 pnpm install
 ```
 
-3. Set up environment variables:
+3. Generate secure credentials:
 ```bash
-cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY
+# Interactive credential generator
+pnpm run generate-creds
+# Copy the generated credentials to .env
 ```
 
-4. Initialize the database:
+4. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env with:
+# - Your OPENAI_API_KEY
+# - Generated AUTH_PASSWORD, SESSION_SECRET, CLEANUP_SECRET_KEY
+```
+
+5. Validate configuration:
+```bash
+pnpm run validate-env
+```
+
+6. Initialize the database:
 ```bash
 pnpm exec prisma db push
 ```
@@ -93,6 +126,57 @@ docker-compose up -d
 ```
 
 4. Open [http://localhost:3040](http://localhost:3040) in your browser
+
+## Production Deployment
+
+**⚠️ IMPORTANT: Read [DEPLOYMENT.md](./DEPLOYMENT.md) for comprehensive production deployment guide**
+
+### Quick Production Checklist
+
+1. **Generate Secure Credentials**
+```bash
+pnpm run generate-creds
+```
+
+2. **Configure Environment**
+```bash
+# Set these in your production .env:
+AUTH_USERNAME=admin                        # Change this!
+AUTH_PASSWORD=$2b$10$...                   # Use bcrypt hash
+SESSION_SECRET=<32+ char random string>    # CRITICAL!
+CLEANUP_SECRET_KEY=<random string>
+NEXT_PUBLIC_APP_URL=https://yourdomain.com # HTTPS required!
+```
+
+3. **Validate Configuration**
+```bash
+pnpm run validate-env
+```
+
+4. **Deploy with Docker**
+```bash
+docker-compose up -d
+```
+
+5. **Set Up Session Cleanup Cron Job**
+```bash
+# Add to crontab (runs every 6 hours)
+0 */6 * * * curl -X POST https://yourdomain.com/api/sessions/cleanup \
+  -H "x-cleanup-auth: YOUR_CLEANUP_SECRET_KEY"
+```
+
+### Production Security Requirements
+
+- ✅ Use HTTPS (secure cookies require it)
+- ✅ Generate strong SESSION_SECRET (32+ characters)
+- ✅ Use bcrypt-hashed AUTH_PASSWORD
+- ✅ Set up periodic session cleanup
+- ✅ Configure firewall rules
+- ✅ Enable rate limiting in reverse proxy
+- ✅ Regular database backups
+- ✅ Monitor application logs
+
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions.
 
 ## Usage
 
@@ -151,18 +235,38 @@ This ensures maximum compatibility with 3CX phone systems and minimizes file siz
 
 ## Environment Variables
 
+### Required Variables
+
 ```env
 # OpenAI API Configuration
 OPENAI_API_KEY=your_openai_api_key_here
+
+# Authentication (REQUIRED)
+AUTH_USERNAME=admin                      # Change in production!
+AUTH_PASSWORD=$2b$10$...                 # Use bcrypt hash
+SESSION_SECRET=<32+ char random>         # CRITICAL - generate with openssl
+CLEANUP_SECRET_KEY=<random string>       # For session cleanup endpoint
 
 # Database Configuration
 DATABASE_URL="file:./data/prompts.db"
 
 # Application Configuration
-NEXT_PUBLIC_APP_URL=http://localhost:3040
+NEXT_PUBLIC_APP_URL=http://localhost:3040  # Use HTTPS in production!
 
 # Audio Storage Path
 AUDIO_STORAGE_PATH=./public/audio
+```
+
+### Generate Secure Values
+
+```bash
+# Generate all credentials interactively
+pnpm run generate-creds
+
+# Or manually:
+openssl rand -base64 32  # For SESSION_SECRET
+openssl rand -base64 32  # For CLEANUP_SECRET_KEY
+node -e "require('./lib/auth').hashPassword('yourpassword').then(console.log)"
 ```
 
 ## Project Structure

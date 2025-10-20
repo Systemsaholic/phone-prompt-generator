@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Button } from './ui/button'
-import { Download, Trash2, Volume2, RefreshCw } from 'lucide-react'
+import { Download, Trash2, Volume2, RefreshCw, Edit } from 'lucide-react'
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 import ConfirmDialog from './ui/ConfirmDialog'
@@ -21,7 +21,11 @@ interface Generation {
   createdAt: string
 }
 
-export default function HistoryPanel() {
+interface HistoryPanelProps {
+  onGenerationSelect?: (generation: Generation) => void
+}
+
+export default function HistoryPanel({ onGenerationSelect }: HistoryPanelProps) {
   const [generations, setGenerations] = useState<Generation[]>([])
   const [loading, setLoading] = useState(true)
   const [total, setTotal] = useState(0)
@@ -86,6 +90,13 @@ export default function HistoryPanel() {
     link.click()
   }
 
+  const handleEdit = (generation: Generation) => {
+    if (onGenerationSelect) {
+      onGenerationSelect(generation)
+      toast.success('Loaded generation into editor')
+    }
+  }
+
   if (loading) {
     return <div className="p-8 text-center">Loading history...</div>
   }
@@ -145,6 +156,14 @@ export default function HistoryPanel() {
                 )}
               </div>
               <div className="flex gap-2">
+                <Button
+                  onClick={() => handleEdit(generation)}
+                  variant="outline"
+                  size="icon"
+                  title="Edit"
+                >
+                  <Edit className="h-4 w-4 text-blue-500" />
+                </Button>
                 <Button
                   onClick={() => window.open(generation.fileUrl, '_blank')}
                   variant="outline"
