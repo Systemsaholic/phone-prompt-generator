@@ -1,10 +1,44 @@
 # Phone Prompt Generator
 
+<div align="center">
+
 A Next.js 14 application for generating professional phone system audio prompts using OpenAI's TTS and GPT-4 APIs with built-in authentication, session management, and 3CX-optimized audio conversion.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![Next.js](https://img.shields.io/badge/Next.js-14.2-black)
-![License](https://img.shields.io/badge/license-MIT-green)
+[![Version](https://img.shields.io/badge/version-1.0.0-blue)](https://github.com/Systemsaholic/phone-prompt-generator/releases)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-14.2-black)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.5-blue)](https://www.typescriptlang.org/)
+[![CI/CD](https://github.com/Systemsaholic/phone-prompt-generator/actions/workflows/ci.yml/badge.svg)](https://github.com/Systemsaholic/phone-prompt-generator/actions)
+[![Security](https://img.shields.io/badge/security-A+-brightgreen)](./SECURITY.md)
+
+[Features](#features) •
+[Quick Start](#quick-start) •
+[Documentation](#documentation) •
+[Contributing](#contributing) •
+[License](#license)
+
+</div>
+
+---
+
+## Table of Contents
+
+- [Features](#features)
+- [Quick Start](#quick-start)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Docker Installation](#docker-installation)
+- [Production Deployment](#production-deployment)
+- [Usage](#usage)
+- [API Reference](#api-reference)
+- [Documentation](#documentation)
+- [Development](#development)
+- [Contributing](#contributing)
+- [Security](#security)
+- [License](#license)
+- [Support](#support)
+
+---
 
 ## Features
 
@@ -297,26 +331,150 @@ phone-prompt-generator/
 └── Dockerfile           # Container definition
 ```
 
+## Development
+
+### Available Scripts
+
+```bash
+pnpm dev              # Start development server
+pnpm build            # Build for production
+pnpm start            # Start production server
+pnpm lint             # Run ESLint
+pnpm validate-env     # Validate environment
+pnpm generate-creds   # Generate secure credentials
+pnpm db:push          # Push database schema
+pnpm db:generate      # Generate Prisma client
+pnpm test             # Run tests (when available)
+```
+
+### Development Workflow
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for detailed development guidelines including:
+- Branch strategy
+- Commit conventions
+- Pull request process
+- Code quality standards
+- Security best practices
+
+## Documentation
+
+### 📚 Comprehensive Guides
+
+- **[README.md](./README.md)** - Quick start and overview (you are here)
+- **[DEPLOYMENT.md](./DEPLOYMENT.md)** - Production deployment guide
+- **[CONTRIBUTING.md](./CONTRIBUTING.md)** - Development and contribution guidelines
+- **[CHANGELOG.md](./CHANGELOG.md)** - Version history and changes
+- **[SECURITY.md](./SECURITY.md)** - Security policy and reporting
+- **[CODE_OF_CONDUCT.md](./CODE_OF_CONDUCT.md)** - Community guidelines
+- **[PRODUCTION_READINESS.md](./PRODUCTION_READINESS.md)** - Security audit summary
+- **[CLAUDE.md](./CLAUDE.md)** - Development with Claude Code
+
+### 🔗 Quick Links
+
+- [GitHub Repository](https://github.com/Systemsaholic/phone-prompt-generator)
+- [Issue Tracker](https://github.com/Systemsaholic/phone-prompt-generator/issues)
+- [Pull Requests](https://github.com/Systemsaholic/phone-prompt-generator/pulls)
+- [Releases](https://github.com/Systemsaholic/phone-prompt-generator/releases)
+
+## Contributing
+
+We welcome contributions! Please see our [Contributing Guide](./CONTRIBUTING.md) for details.
+
+### How to Contribute
+
+1. **Fork the repository**
+2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
+3. **Make your changes** following our coding standards
+4. **Commit your changes** (`git commit -m 'feat: add amazing feature'`)
+5. **Push to the branch** (`git push origin feature/amazing-feature`)
+6. **Open a Pull Request**
+
+### Contribution Guidelines
+
+- Follow the [Conventional Commits](https://www.conventionalcommits.org/) specification
+- Ensure all tests pass before submitting PR
+- Update documentation as needed
+- Add tests for new features
+- Maintain code coverage
+
 ## Troubleshooting
 
 ### Audio Generation Fails
-- Verify your OpenAI API key is correct
-- Check you have sufficient API credits
-- Ensure text is under 4096 characters
+- **API Key Invalid**: Verify your OPENAI_API_KEY is correct
+- **Insufficient Credits**: Check you have sufficient API credits
+- **Text Too Long**: Ensure text is under 4096 characters
+- **Rate Limit**: Wait and retry if hitting rate limits
+
+### Authentication Issues
+- **Login Fails**: Verify AUTH_USERNAME and AUTH_PASSWORD are correct
+- **Session Lost**: Check SESSION_SECRET is set and consistent
+- **Rate Limited**: Wait 15 minutes after 5 failed login attempts
 
 ### Docker Issues
-- Make sure port 3040 is not in use
-- Check Docker logs: `docker-compose logs -f`
-- Rebuild if needed: `docker-compose build --no-cache`
+- **Port Conflict**: Make sure port 3040 is not in use (`lsof -i :3040`)
+- **Build Fails**: Check Docker logs (`docker-compose logs -f`)
+- **Rebuild**: Force rebuild if needed (`docker-compose build --no-cache`)
+- **Volume Issues**: Check volume permissions
 
 ### Database Issues
-- Reset database: `pnpm exec prisma db push --force-reset`
-- Check permissions on data directory
+- **Reset Database**: `pnpm exec prisma db push --force-reset`
+- **Permissions**: Check permissions on data directory
+- **Migrations**: Run `pnpm db:push` after schema changes
+
+### Environment Issues
+- **Validation Fails**: Run `pnpm run validate-env` for detailed errors
+- **Missing Variables**: Check .env against .env.example
+- **Weak Secrets**: Generate new secrets with `pnpm run generate-creds`
+
+## Security
+
+### Reporting Security Issues
+
+**Do not report security vulnerabilities through public GitHub issues.**
+
+Please report security vulnerabilities by:
+- Using GitHub's private vulnerability reporting feature
+- Following our [Security Policy](./SECURITY.md)
+
+### Security Features
+
+- ✅ Authentication with rate limiting
+- ✅ Cryptographically secure session tokens
+- ✅ HMAC-SHA256 token signing
+- ✅ Bcrypt password hashing
+- ✅ Input validation and sanitization
+- ✅ Environment validation
+- ✅ HTTPOnly secure cookies
+- ✅ Production-ready error handling
+
+See [SECURITY.md](./SECURITY.md) for complete security documentation.
 
 ## License
 
-MIT
+This project is licensed under the MIT License - see the [LICENSE](./LICENSE) file for details.
 
 ## Support
 
-For issues or questions, please open a GitHub issue or contact support.
+### Getting Help
+
+- 📖 **Documentation**: Check our [comprehensive guides](#documentation)
+- 🐛 **Bug Reports**: [Open an issue](https://github.com/Systemsaholic/phone-prompt-generator/issues/new?template=bug_report.yml)
+- 💡 **Feature Requests**: [Request a feature](https://github.com/Systemsaholic/phone-prompt-generator/issues/new?template=feature_request.yml)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/Systemsaholic/phone-prompt-generator/discussions)
+- 🔒 **Security**: See [SECURITY.md](./SECURITY.md)
+
+### Community
+
+- **GitHub**: [@Systemsaholic](https://github.com/Systemsaholic)
+- **Issues**: [Report bugs or request features](https://github.com/Systemsaholic/phone-prompt-generator/issues)
+- **Pull Requests**: [Contribute to the project](https://github.com/Systemsaholic/phone-prompt-generator/pulls)
+
+---
+
+<div align="center">
+
+Made with ❤️ by [Systemsaholic](https://github.com/Systemsaholic)
+
+**[⬆ Back to Top](#phone-prompt-generator)**
+
+</div>
