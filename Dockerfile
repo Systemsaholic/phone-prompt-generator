@@ -23,8 +23,9 @@ RUN pnpm exec prisma generate
 # Copy the rest of the application
 COPY . .
 
-# Create data and audio directories
-RUN mkdir -p /app/data /app/public/audio
+# Create data and audio directories with proper permissions
+RUN mkdir -p /app/data /app/public/audio && \
+    chmod -R 777 /app/data /app/public/audio
 
 # Build arguments for environment variables needed during build
 ARG OPENAI_API_KEY
@@ -41,6 +42,9 @@ RUN pnpm build
 
 # Initialize the database
 RUN pnpm exec prisma db push
+
+# Ensure permissions are correct for runtime
+RUN chmod -R 777 /app/data /app/public/audio
 
 # Expose port
 EXPOSE 3000
