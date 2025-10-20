@@ -148,10 +148,11 @@ export function validateInstructions(instructions: string): string {
 /**
  * Safely parse JSON request body
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function parseRequestBody<T = any>(request: Request): Promise<T> {
   try {
     return await request.json()
-  } catch (error) {
+  } catch {
     throw new ValidationError('Invalid JSON in request body')
   }
 }

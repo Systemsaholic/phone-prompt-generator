@@ -4,15 +4,14 @@ import { prisma } from '@/lib/db'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { 
-      version, 
-      text, 
-      voice, 
-      speed, 
-      instructions, 
-      fileName, 
-      audioUrl, 
-      mode 
+    const {
+      text,
+      voice,
+      speed,
+      instructions,
+      fileName,
+      audioUrl,
+      mode
     } = body
 
     if (!text || !voice || !fileName || !audioUrl) {

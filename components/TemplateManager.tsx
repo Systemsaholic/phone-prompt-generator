@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { Button } from './ui/button'
-import { FileText, Plus, Edit, Trash2, Check } from 'lucide-react'
+import { FileText, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 interface Template {

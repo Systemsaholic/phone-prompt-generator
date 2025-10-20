@@ -2,6 +2,7 @@ import path from 'path'
 import fs from 'fs/promises'
 
 // Dynamic import to avoid build-time issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let ffmpeg: any = null
 let ffmpegPath: string | undefined = undefined
 
@@ -18,7 +19,7 @@ async function initFFmpeg() {
         if (ffmpegPath) {
           ffmpeg.setFfmpegPath(ffmpegPath)
         }
-      } catch (e) {
+      } catch {
         console.warn('FFmpeg installer not available, using system ffmpeg')
         // Will use system ffmpeg if available
       }
@@ -96,7 +97,7 @@ export async function convertAudio(
     command = command.toFormat(format.format)
 
     command
-      .on('error', (err: any) => {
+      .on('error', (err: Error) => {
         console.error('FFmpeg error:', err)
         reject(err)
       })

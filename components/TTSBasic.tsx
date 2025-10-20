@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react'
 import { Button } from './ui/button'
-import { Download, Loader2, Volume2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
 import VoicePreview from './VoicePreview'
 import AITextGenerator from './AITextGenerator'
 import AudioVersionCard, { AudioVersion } from './AudioVersionCard'
@@ -37,12 +37,10 @@ export default function TTSBasic({ templateText = '', historyGeneration }: TTSBa
   const [speed, setSpeed] = useState(1.0)
   const [fileName, setFileName] = useState('')
   const [loading, setLoading] = useState(false)
-  const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [versions, setVersions] = useState<AudioVersion[]>([])
   const [playingVersionId, setPlayingVersionId] = useState<string | null>(null)
   const lastTextHashRef = useRef<string>('')
   const lastSettingsHashRef = useRef<string>('')
-  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({})
 
   React.useEffect(() => {
     if (templateText) {
@@ -177,7 +175,6 @@ export default function TTSBasic({ templateText = '', historyGeneration }: TTSBa
         }
         
         setVersions([...versions, newVersion])
-        setAudioUrl(data.audioUrl)
         toast.success(`Audio v${versionNum} generated successfully!`)
       } else {
         toast.error(data.error || 'Failed to generate audio')

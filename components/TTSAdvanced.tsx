@@ -2,7 +2,7 @@
 
 import React, { useState, useRef } from 'react'
 import { Button } from './ui/button'
-import { Download, Loader2, Volume2, Sparkles, AlertCircle } from 'lucide-react'
+import { Loader2, Sparkles, AlertCircle } from 'lucide-react'
 import VoicePreview from './VoicePreview'
 import AITextGenerator from './AITextGenerator'
 import AudioVersionCard, { AudioVersion } from './AudioVersionCard'
@@ -52,7 +52,6 @@ export default function TTSAdvanced({ templateText = '', historyGeneration }: TT
   const [selectedPresets, setSelectedPresets] = useState<string[]>([])
   const [fileName, setFileName] = useState('')
   const [loading, setLoading] = useState(false)
-  const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const [versions, setVersions] = useState<AudioVersion[]>([])
   const [playingVersionId, setPlayingVersionId] = useState<string | null>(null)
   const lastTextHashRef = useRef<string>('')
@@ -236,7 +235,6 @@ export default function TTSAdvanced({ templateText = '', historyGeneration }: TT
         }
         
         setVersions([...versions, newVersion])
-        setAudioUrl(data.audioUrl)
         toast.success(`Advanced audio v${versionNum} generated successfully!`)
       } else {
         toast.error(data.error || 'Failed to generate audio')

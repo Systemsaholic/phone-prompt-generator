@@ -17,7 +17,7 @@ export async function GET(
         'Cache-Control': 'public, max-age=31536000',
       },
     });
-  } catch (error) {
+  } catch {
     return new NextResponse('File not found', { status: 404 });
   }
 }

@@ -4,7 +4,6 @@ import { prisma } from '@/lib/db'
 import { convertTo3CXFormat } from '@/lib/audio-converter'
 import { getOrCreateSessionFolder, getSessionFilePath } from '@/lib/session'
 import fs from 'fs/promises'
-import path from 'path'
 
 export async function POST(request: NextRequest) {
   try {
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
     // Generate audio using standard TTS (GPT-4o audio preview requires special API access)
     const mp3 = await openai.audio.speech.create({
       model: 'tts-1-hd',
-      voice: voice as any,
+      voice: voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
       input: text,
       speed: speed,
     })

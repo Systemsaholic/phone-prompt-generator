@@ -7,6 +7,7 @@ export class AppError extends Error {
     message: string,
     public statusCode: number = 500,
     public code?: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public details?: any
   ) {
     super(message)
@@ -16,6 +17,7 @@ export class AppError extends Error {
 }
 
 export class ValidationError extends AppError {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   constructor(message: string, details?: any) {
     super(message, 400, 'VALIDATION_ERROR', details)
   }
@@ -49,6 +51,7 @@ export class ExternalAPIError extends AppError {
   constructor(
     service: string,
     message: string,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     originalError?: any
   ) {
     super(
@@ -63,6 +66,7 @@ export class ExternalAPIError extends AppError {
 /**
  * Parses OpenAI API errors and returns appropriate error
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function handleOpenAIError(error: any): AppError {
   // Check for common OpenAI error patterns
   if (error?.status === 401 || error?.message?.includes('API key')) {

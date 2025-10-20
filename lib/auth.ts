@@ -5,11 +5,6 @@ import crypto from 'crypto'
 const SESSION_COOKIE_NAME = 'auth_session'
 const SESSION_DURATION = 24 * 60 * 60 * 1000 // 24 hours
 
-interface AuthCredentials {
-  username: string
-  password: string
-}
-
 interface SessionData {
   token: string
   expiresAt: number
@@ -98,7 +93,7 @@ export async function validateCredentials(username: string, password: string): P
   try {
     const isValid = await bcrypt.compare(password, validPassword)
     return isValid
-  } catch (error) {
+  } catch {
     // If it's not a valid bcrypt hash, fall back to plain text comparison above
     return false
   }
