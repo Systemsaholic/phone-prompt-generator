@@ -24,7 +24,7 @@ RUN pnpm exec prisma generate
 COPY . .
 
 # Create data and audio directories with proper permissions
-RUN mkdir -p /app/data /app/public/audio && \
+RUN mkdir -p /app/data /app/public/audio /app/public/audio/samples && \
     chmod -R 777 /app/data /app/public/audio
 
 # Build arguments for environment variables needed during build

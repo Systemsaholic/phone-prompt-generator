@@ -28,8 +28,17 @@ app.prepare().then(() => {
         if (existsSync(filePath)) {
           const fs = require('fs');
           const stat = fs.statSync(filePath);
+
+          // Determine content type based on file extension
+          let contentType = 'audio/wav';
+          if (pathname.endsWith('.mp3')) {
+            contentType = 'audio/mpeg';
+          } else if (pathname.endsWith('.wav')) {
+            contentType = 'audio/wav';
+          }
+
           res.writeHead(200, {
-            'Content-Type': 'audio/wav',
+            'Content-Type': contentType,
             'Content-Length': stat.size,
             'Cache-Control': 'public, max-age=31536000'
           });
